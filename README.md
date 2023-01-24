@@ -8,34 +8,42 @@ If there is related infringement or violation of related regulations, please con
 # 目錄
 
 - [Note](#0)
-  - [學習資源](#0.1)
-- [03_Makefile](#3)
-  - [3-0_關於gcc、make和CMake的區別](#3.0)
-  - [3-1_Makefile要達成的效果](#3.1)
-  - [3-2_Makefile的引入與規則](#3.2)
-  - [3-3_Makefile的語法](#3.3)
-  - [3-4_Makefile函數](#3.4)
-  - [3-5_Makefile實例](#3.5)
-  - [3-6_通用Makefile的使用](#3.6)
-    - [通用Makefile的設計思想](#3.6.0)
-    - [一、各級子目錄的Makefile](#3.6.1)
-    - [二、頂層目錄的Makefile](#3.6.2)
-    - [三、頂層目錄的Makefile.build](#3.6.3)
-    - [四、怎麼使用這套Makefile](#3.6.4)
-  - [3-7_通用Makefile的解析](#3.7)
-  - [3-8_簡介buildroot](#3.8)
-  - [3-9_靜動態庫](#3.9)
-  - [3-10_參考範例](#3.10)
-  - [3-11_指示符include](#3.11)
+- [筆記](#1)
+  - [關於gcc、make和CMake的區別](#1.0)
+  - [Makefile要達成的效果](#1.1)
+  - [Makefile的引入與規則](#1.2)
+  - [Makefile的語法](#1.3)
+  - [Makefile函數](#1.4)
+  - [Makefile實例](#1.5)
+  - [通用Makefile的使用](#1.6)
+    - [通用Makefile的設計思想](#1.6.0)
+    - [一、各級子目錄的Makefile](#1.6.1)
+    - [二、頂層目錄的Makefile](#1.6.2)
+    - [三、頂層目錄的Makefile.build](#1.6.3)
+    - [四、怎麼使用這套Makefile](#1.6.4)
+  - [通用Makefile的解析](#1.7)
+  - [簡介buildroot](#1.8)
+  - [靜動態庫](#1.9)
+  - [參考範例](#1.10)
+  - [指示符include](#1.11)
+- [GNU_Make](#2)
+  - [Writing Makefiles](#2.1)
+    - [What Makefiles Contain](#2.1.1)
+    - [What Name to Give Your Makefile](#2.1.2)
+    - [Including Other Makefiles](#2.1.3)
+    - [How Makefiles Prevent from Remaking](#2.1.4)
+    - [How make Reads a Makefile](#2.1.5)
+  - [Writing Rules](#2.2)
+    - [Rule Syntax](#2.2.1)
+    - [Types of Prerequisites](#2.2.2)
+    - [Using Wildcard Characters in File Names](#2.2.3)
 
 
-<h1 id="3">03_Makefile</h1>
+<h1 id="1">筆記</h1>
 
 [Makefile學習教程: 跟我一起寫 Makefile](https://blog.xuite.net/tzeng015/twblog/113272267-Makefile%E5%AD%B8%E7%BF%92%E6%95%99%E7%A8%8B%3A+%E8%B7%9F%E6%88%91%E4%B8%80%E8%B5%B7%E5%AF%AB+Makefile)
 
-[GNU_Make.pdf](./[第4篇]_嵌入式Linux應用開發基礎知識/doc/GNU_Make.pdf)
-
-<h2 id="3.0">3-0_關於gcc、make和CMake的區別</h2>
+<h2 id="1.0">關於gcc、make和CMake的區別</h2>
 
 https://www.cnblogs.com/xuelisheng/p/9988626.html
 
@@ -44,7 +52,7 @@ https://www.cnblogs.com/xuelisheng/p/9988626.html
 - make工具可以看成是一個智能的批處理工具，它本身並沒有編譯和鏈接的功能，而是用類似於批處理的方式—通過調用makefile文件中用戶指定的命令來進行編譯和鏈接的。
 - cmake是make maker
 
-<h2 id="3.1">3-1_Makefile要達成的效果</h2>
+<h2 id="1.1">Makefile要達成的效果</h2>
 
 - 為了能夠高效地編譯程序
 
@@ -54,7 +62,7 @@ https://www.cnblogs.com/xuelisheng/p/9988626.html
 
 - make命令所執行的動作依賴於Makefile文件
 
-<h2 id="3.2">3-2_Makefile的引入與規則</h2>
+<h2 id="1.2">Makefile的引入與規則</h2>
 
 ### Makefile的引入
 
@@ -141,7 +149,7 @@ First_target : $(xxx) $(yyy)   // 在文件的後面再來完善
     command
 ```
 
-<h2 id="3.3">3-3_Makefile的語法</h2>
+<h2 id="1.3">Makefile的語法</h2>
 
 ### make命令的使用
 
@@ -320,7 +328,7 @@ TOPDIR := $(shell pwd)
 
 這是個立即變量，TOPDIR等於shell命令pwd的結果。
 
-<h2 id="3.4">3-4_Makefile函數</h2>
+<h2 id="1.4">Makefile函數</h2>
 
 - makefile裡面可以包含很多函數，這些函數都是make本身實現的，下面我們來幾個常用的函數。
 
@@ -669,7 +677,7 @@ $(shell command arguments)
 c_src := $(shell ls *.c)
 ```
 
-<h2 id="3.5">3-5_Makefile實例</h2>
+<h2 id="1.5">Makefile實例</h2>
 
 在`c.c`裡面，包含一個頭文件`c.h`，在`c.h`裡面定義一個宏，把這個宏打印出來。
 
@@ -872,9 +880,9 @@ main.o : main.c defs.h
         gcc $(CFLAGS) -c -o $@ $< -MD -MF .$@.d
     ```
 
-<h2 id="3.6">3-6_通用Makefile的使用</h2>
+<h2 id="1.6">通用Makefile的使用</h2>
 
-<h3 id="3.6.0">通用Makefile的設計思想：</h3>
+<h3 id="1.6.0">通用Makefile的設計思想：</h3>
 
 **在Makefile文件中確定要編譯的文件、目錄，比如：**
 
@@ -929,7 +937,7 @@ $(TARGET) : built-in.o
 2. 頂層目錄的Makefile.build
 3. 各級子目錄的Makefile
 
-<h3 id="3.6.1">一、各級子目錄的Makefile：</h3>
+<h3 id="1.6.1">一、各級子目錄的Makefile：</h3>
 
 [sub-Makefile](./source/05_general_Makefile/example/a/Makefile)
 
@@ -955,7 +963,7 @@ obj-y += subdir/
 
 EXTRA_CFLAGS := -D \<MircoName\> ： 代表定義Makefile目錄下某個 .c或.h 使用到的宏
 
-<h3 id="3.6.2">二、頂層目錄的Makefile：</h3>
+<h3 id="1.6.2">二、頂層目錄的Makefile：</h3>
 
 [Makefile](./source/05_general_Makefile/example/Makefile)
 
@@ -965,13 +973,13 @@ EXTRA_CFLAGS := -D \<MircoName\> ： 代表定義Makefile目錄下某個 .c或.h
 定義鏈接參數LDFLAGS,
 這些參數就是文件中用export導出的各變量。
 
-<h3 id="3.6.3">三、頂層目錄的Makefile.build：</h3>
+<h3 id="1.6.3">三、頂層目錄的Makefile.build：</h3>
 
 [Makefile.build](./source/05_general_Makefile/example/Makefile.build)
 
 這是最複雜的部分，它的功能就是把某個目錄及它的所有子目錄中、需要編進程序去的文件都編譯出來，打包為built-in.o
 
-<h3 id="3.6.4">四、怎麼使用這套Makefile：</h3>
+<h3 id="1.6.4">四、怎麼使用這套Makefile：</h3>
 
 1. 把頂層Makefile, Makefile.build放入程序的頂層目錄
    在各自子目錄創建一個空白的Makefile
@@ -998,7 +1006,7 @@ EXTRA_CFLAGS := -D \<MircoName\> ： 代表定義Makefile目錄下某個 .c或.h
 
 6. 執行"make"來編譯，執行"make clean"來清除，執行"make distclean"來徹底清除
 
-<h2 id="3.7">3-7_通用Makefile的解析</h2>
+<h2 id="1.7">通用Makefile的解析</h2>
 
 built-in.o：每個Makefile的目錄下都會把.o編譯成一個build-in.o，最後頂層目錄的Makefile會把當前目錄的.o與全部子目錄的build-in.o再編譯成一個build-in.o，用來代表所有的.o文件
 
@@ -1008,7 +1016,7 @@ Makefile搭配Makefile.build編譯程式之流程分析
 
 ![img01](./image/img01.PNG)
 
-<h2 id="3.8">3-8_簡介buildroot</h2>
+<h2 id="1.8">簡介buildroot</h2>
 
 ### 什麼是buildroot
 
@@ -1026,7 +1034,7 @@ Buildroot是Linux平臺上一個構建嵌入式Linux系統的框架。
 
 [https://www.twblogs.net/a/5bf5cc22bd9eee37a1434c76#:~:text=2017.02.9.tar.gz-,1.2%20buildroot%20%E7%9A%84%E7%9B%AE%E9%8C%84%E7%B5%90%E6%A7%8B,-buildroot/package/%EF%BC%9A%E4%B8%8B%E9%9D%A2]
 
-<h2 id="3.9">3-9_靜動態庫</h2>
+<h2 id="1.9">靜動態庫</h2>
 
 1. 靜態庫(static library) libxxx.a
 
@@ -1046,7 +1054,7 @@ Buildroot是Linux平臺上一個構建嵌入式Linux系統的框架。
 
    - 使用相關庫編譯出執行檔 : `gcc -o main main.c libadd.so`
 
-<h2 id="3.10">3-10_參考範例</h2>
+<h2 id="1.10">參考範例</h2>
 
 [MakefileTest](./code/MakefileTest/Makefile)
 
@@ -1060,7 +1068,7 @@ Buildroot是Linux平臺上一個構建嵌入式Linux系統的框架。
 
 [Kernel_Read_Test](./Kernel_Read_Test/Makefile)
 
-<h2 id="3.10">3-11_指示符include</h2>
+<h2 id="1.11">指示符include</h2>
 
 "include"指示符告訴 make 暫停讀取當前的 Makefile, 而轉去讀取"include"指定的一個或者多個文件, 完成以後再繼續當前 Makefile 的讀取
 
@@ -1114,5 +1122,190 @@ Make: *** No rule to make target ‘<filename>’. Stop
 - 使用 `include FILENAMES...`, make 程序處理時, 如果"FILENAMES"列表中的任何一個文件不能正常讀取而且不存在一個創建此文件的規則時 make 程序將會提示錯誤並退出。
 - 使用 `-include FILENAMES...` 的情況是, 當所包含的文件不存在或者不存在一個規則去創建它, make 程序會繼續執行, 只有在因爲 makefile 的目標的規則不存在時, 才會提示致命錯誤並退出。
 - 爲了和其它的 make 程序進行兼容。也可以使用 `sinclude` 來代替"-include"(GNU 所支持的方式)  
+
+<h1 id="2">GNU_Make</h1>
+
+[GNU_Make.pdf](./doc/GNU_Make.pdf)
+
+<h2 id="2.1">Writing Makefiles</h2>
+
+<h3 id="2.1.1">What Makefiles Contain</h3>
+
+Makefiles contain five kinds of things:
+
+- explicit rules
+- implicit rules
+- variable definitions
+- directives
+  - Reading another makefile
+  - Deciding whether to use or ignore a part of the makefile
+  - Defining a variable from a verbatim string containing multiple lines
+- comments - `#`
+
+Makefiles use a `line-based` syntax in which the newline character is special and marks the end of a statement.
+
+- You do this by escaping the internal newlines with a backslash `\` character.
+- The way in which `backslash`/`newline` combinations are handled depends on whether the statement is a recipe line or a non-recipe line.
+
+<h3 id="2.1.2">What Name to Give Your Makefile</h3>
+
+A standard name：`makefile` and `Makefile`
+
+A nonstandard name
+
+- you can specify the makefile name with the `-f name` or `--file=name` which tells make to read the file name as the makefile
+
+<h3 id="2.1.3">Including Other Makefiles</h3>
+
+The `include` directive tells make to **suspend** reading the current makefile and read one or more other makefiles before continuing.
+
+```makefile
+#include filenames...
+include foo *.mk $(bar)
+```
+
+- The first character must not be a tab.
+- If filenames is empty, nothing is included and no error is printed.
+
+One occasion for using include directives is when several programs, handled by individual makefiles in various directories, need to use a **common set** of variable definitions or pattern rules
+
+Any directories you have specified with the `-I` or `--include-dir` options are searched
+
+- The `.INCLUDE_DIRS` variable will contain the current list of directories that make will search for included files.
+
+`-include filenames...`
+
+- This acts like include in every way except that there is no error (not even a warning) if any of the filenames (or any prerequisites of any of the filenames) do not exist or cannot be remade.
+
+<h3 id="2.1.4">How Makefiles Prevent from Remaking</h3>
+
+You can take advantage of this to optimize startup time: if you know you don’t need your Makefile to be remade you can prevent make from trying to remake it by adding either:
+
+`.PHONY: Makefile`
+
+or:
+
+`Makefile:: ;`
+
+<h3 id="2.1.5">How make Reads a Makefile</h3>
+
+GNU make does its work in two distinct phases.
+
+- The first phase it reads all the makefiles, included makefiles, etc. and internalizes all the variables and their values and implicit and explicit rules, and builds a dependency graph of all the targets and their prerequisites.
+- The second phase, make uses this internalized data to determine which targets need to be updated and run the recipes necessary to update them.
+
+We say that expansion is `immediate` if it happens during the first phase: make will expand that part of the construct as the makefile is parsed.
+
+Expansion of a `deferred` construct part is delayed until the expansion is used: either when it is referenced in an immediate context, or when it is needed during the
+second phase.
+
+#### Variable Assignment
+
+```makefile
+immediate = deferred
+immediate ?= deferred
+immediate := immediate
+immediate += deferred or immediate
+immediate != immediate
+```
+
+#### Conditional Directives
+
+Conditional directives are parsed immediately.
+
+If you need to use automatic variables in a conditional
+directive you must move the condition into the recipe and use shell conditional syntax
+instead.
+
+#### Rule Definition
+
+```makefile
+immediate : immediate ; deferred
+    deferred
+```
+
+- The target and prerequisite sections are expanded immediately
+- The recipe used to build the target is always deferred.
+
+<h2 id="2.2">Writing Rules</h2>
+
+<h3 id="2.2.1">Rule Syntax</h3>
+
+In general, a rule looks like this:
+
+```makefile
+targets : prerequisites
+    recipe
+    ...
+```
+
+or like this:
+
+```makefile
+targets : prerequisites ; recipe
+    recipe
+    ...
+```
+
+<h3 id="2.2.2">Types of Prerequisites</h3>
+
+Normally, this is exactly what you want: if a target’s prerequisite is updated, then the target should also be updated.
+
+Occasionally you may want to ensure that a prerequisite is built before a target, but `without forcing` the target to be updated if the prerequisite is updated. `Order-only prerequisites` are used to create this type of relationship.
+
+Any prerequisites to the left of the pipe symbol are normal; any prerequisites to the right are order-only:
+
+```makefile
+targets : normal-prerequisites | order-only-prerequisites
+```
+
+- The normal prerequisites section may of course be empty.
+
+<h3 id="2.2.3">Using Wildcard Characters in File Names</h3>
+
+A single file name can specify many files using `wildcard characters`.
+
+The wildcard characters in make are `*`, `?` and `[...]`, the same as in the Bourne shell.
+
+The character `~` at the beginning of a file name also has special significance.
+
+- If alone, or followed by a slash, it represents your `home directory`
+- If the `~` is followed by a word, the string represents the `home directory of the user named by that word`.
+
+  - `~john/bin expands to /home/john/bin`
+
+Wildcard expansion happens automatically in `rules`. But wildcard expansion does not normally take place when a `variable` is set, or inside `the arguments of a function`.
+
+```makefile
+$(wildcard pattern...)
+```
+
+One use of the wildcard function is to get a list of `all the C source files in a directory`, like this:
+
+```makefile
+$(wildcard *.c)
+```
+
+We can change the list of C source files into a list of object files by replacing the `.c` suffix with `.o` in the result, like this:
+
+```makefile
+objects := $(patsubst %.c,%.o,$(wildcard *.c))
+
+foo : $(objects)
+    cc -o foo $(objects)
+```
+
+<h3 id="2.2.4">Searching Directories for Prerequisites</h3>
+
+`VPATH`: Search Path for All Prerequisites
+
+- The value of the `make` variable `VPATH` specifies a list of directories that `make` should search for both prerequisites and targets of rules.
+- In the `VPATH` variable, directory names are separated by `colons` or `blanks`.
+
+    ```makefile
+    VPATH = src:../headers
+    ```
+
+
 
 
