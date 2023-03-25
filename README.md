@@ -10,6 +10,13 @@ If there is related infringement or violation of related regulations, please con
 - [重點整理](#0)
   - [ARCH 和 CROSS_COMPILE 變數](#0.1)
   - [常用於存放庫路徑、庫和包含路徑的變數名稱](#0.2)
+  - [自動化變數($<, $^, $@, ...)](#0.3)
+  - [CFLAGS常用的 C 編譯器的命令行選項](#0.4)
+    - [CFLAGS 設定 C 代碼中的預處理器條件編譯指令](#0.4.1)
+  - [常用的內建函數](#0.5)
+  - [編譯C語言source code產生執行檔範例](#0.6)
+  - [編譯C語言source code產生靜動態庫範例](#0.7)
+  - [編譯內核驅動範例](#0.8)
 - [筆記](#1)
   - [關於gcc、make和CMake的區別](#1.0)
   - [Makefile要達成的效果](#1.1)
@@ -186,7 +193,89 @@ vars:
 
 - 透過 `make vars` 來顯示出所有自動化變數的值，方便你調試和測試 Makefile
 
-<h2 id="0.4">C語言編譯source code產生執行檔範例</h2>
+<h2 id="0.4">CFLAGS常用的 C 編譯器的命令行選項</h2>
+
+CFLAGS 是在 Makefile 中設置的一個變量，用於儲存 C 編譯器的命令行選項。這些選項可以用來控制編譯過程中的各種選項，例如優化級別、警告訊息、調試信息等。以下是一些 CFLAGS 常用的參數：
+
+- `-O` 或 `-Ox`：設置編譯器的優化級別，其中 x 是一個整數，表示優化級別。
+   - 常用的級別有 `-O0`（無優化，用於調試）、`-O1`（基本優化）、`-O2`（高級優化）、`-O3`（最高級優化，可能會降低兼容性）。
+
+- `-g`：生成調試信息，以便使用 gdb 等調試器進行調試。
+- `-Wall`：開啟所有常見警告訊息。
+- `-Wextra`：開啟額外的警告訊息。
+- `-Werror`：將警告訊息視為錯誤，當編譯器發出警告時，會導致編譯失敗。
+- `-I`：指定額外的頭文件搜索路徑。
+  - 例如：`-Iinclude` 或 `-I/path/to/include`。
+- `-D`：定義一個宏。
+  - 例如：`-DDEBUG` 或 `-DVERSION=\"1.0\"`。
+- `-std=`：指定 C 語言的標準版本。
+  - 例如：`-std=c99`、`-std=c11` 或 `-std=gnu99`。
+- `-march=`：指定針對特定的 CPU 架構進行編譯。
+  - 例如：`-march=armv8-a`。
+- `-m32` 或 `-m64`：選擇 32 位或 64 位編譯模式。
+- `-fPIC`：生成位置無關代碼（Position-Independent Code），通常用於編譯動態庫。
+- `-shared`：用於編譯動態庫。
+
+<h3 id="0.4.1">CFLAGS 設定 C 代碼中的預處理器條件編譯指令</h3>
+
+CFLAGS 可以用於給 C 代碼中的預處理器條件編譯指令（如 `#if`，`#ifdef` 等）指定宏定義或取消定義。
+
+- `#if` 接受任何可求值為整數的表達式，例如 `#if 1` 或 `#if (1+1)`
+- `#ifdef` 只檢查指定的標識符是否已定義，例如 `#ifdef MYDEFINE`
+
+    因此，當你只需要檢查標識符是否已定義時，應使用 `#ifdef`。如果你需要檢查一個表達式的值，則應使用 `#if`。
+
+```C
+#include <stdio.h>
+
+#ifdef ENABLE_DEBUG
+#define DEBUG(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#else
+#define DEBUG(fmt, ...)
+#endif
+
+int main() {
+    DEBUG("This is a debug message\n");
+    printf("Hello World!\n");
+    return 0;
+}
+```
+
+可以通過在 Makefile 中設置 CFLAGS，來開啟或關閉 ENABLE_DEBUG 宏定義：
+
+```makefile
+# Enable debugging
+CFLAGS += -DENABLE_DEBUG
+# Disable debugging
+# CFLAGS += -UENABLE_DEBUG
+```
+
+開啟時，編譯器將生成定義 ENABLE_DEBUG 的二進製文件，禁用時則會生成未定義 ENABLE_DEBUG 的二進製文件。
+
+<h2 id="0.5">常用的內建函數</h2>
+
+`$(subst FROM,TO,TEXT)`: 用 TO 替換 TEXT 中的 FROM 字符串。
+
+- 例子：`$(subst abc,def,abcdefgh)` 會返回 defdefgh。
+
+`$(patsubst PATTERN,REPLACEMENT,TEXT)`: 在 TEXT 中搜尋符合 PATTERN 的部分，並用 REPLACEMENT 進行替換。
+
+- 例子：`$(patsubst %.c,%.o,foo.c bar.c)` 會返回 foo.o bar.o。
+- `$(patsubst %.c,%.o,$(SRCS))` 常被縮短為 `$(SRCS:.c=.o)` 是一個便捷的語法，用於將變量中的 `.c` 文件名擴展名替換為 `.o`。
+
+`$(filter PATTERN...,TEXT)`: 在 TEXT 中過濾出符合 PATTERN 的部分。
+
+- 例子：`$(filter %.c,foo.c bar.o)` 會返回 foo.c。
+
+`$(filter-out PATTERN...,TEXT)`: 在 TEXT 中過濾掉符合 PATTERN 的部分。
+
+- 例子：`$(filter-out %.c,foo.c bar.o)` 會返回 bar.o。
+
+`$(wildcard PATTERN)`: 返回符合 PATTERN 的文件名列表。
+
+- 例子：`$(wildcard *.c)` 會返回當前目錄下所有 .c 文件。
+
+<h2 id="0.6">編譯C語言source code產生執行檔範例</h2>
 
 專案結構如下：
 
@@ -279,6 +368,144 @@ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi-
 ```
 
 如果您不指定這些變數，則 Makefile 將使用預設值。
+
+<h2 id="0.7">編譯C語言source code產生靜動態庫範例</h2>
+
+在這兩個範例中，我們可以看到編譯靜態庫和動態庫的主要區別在於連接過程。
+
+- 對於靜態庫，我們使用 `$(AR) rcs` 來生成 `.a` 文件
+- 對於動態庫，我們使用 `$(CC) -shared`來生成 `.so` 文件。另外，編譯動態庫時需要加上 `-fPIC` 選項。
+
+**1. 編譯成靜態庫：**
+
+```makefile
+# Makefile 靜態庫範例
+
+ARCH := arm
+CROSS_COMPILE := arm-linux-gnueabi-
+CC := $(CROSS_COMPILE)gcc
+AR := $(CROSS_COMPILE)ar
+
+SRCS := foo.c bar.c
+OBJS := $(SRCS:.c=.o)
+TARGET := libmylib.a
+
+CFLAGS := -O2 -Wall -Wextra -Iinclude -std=c11
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+    $(AR) rcs $@ $(OBJS)
+
+%.o: %.c
+    $(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+    rm -f $(OBJS) $(TARGET)
+
+.PHONY: all clean
+```
+
+**2. 編譯成動態庫：**
+
+```makefile
+# Makefile 動態庫範例
+
+ARCH := arm
+CROSS_COMPILE := arm-linux-gnueabi-
+CC := $(CROSS_COMPILE)gcc
+
+SRCS := foo.c bar.c
+OBJS := $(SRCS:.c=.o)
+TARGET := libmylib.so
+
+CFLAGS := -O2 -Wall -Wextra -Iinclude -std=c11 -fPIC
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+    $(CC) -shared -o $@ $(OBJS)
+
+%.o: %.c
+    $(CC) $(CFLAGS) -c -o $@ $<
+
+clean:
+    rm -f $(OBJS) $(TARGET)
+
+.PHONY: all clean
+```
+
+<h2 id="0.8">編譯內核驅動範例</h2>
+
+**1. 手動編譯每個源文件並將它們鏈接到一個內核模塊：**
+
+- 編譯每個源文件（.c）並生成對應的目標文件（.o）。
+- 用 ld 將目標文件鏈接為一個內核模塊（.ko）。
+
+    ```makefile
+    # Makefile 手動編譯每個源文件並將它們鏈接到一個內核模塊
+
+    KDIR := /path/to/kernel/source
+    ARCH := arm
+    CROSS_COMPILE := arm-linux-gnueabi-
+    CC := $(CROSS_COMPILE)gcc
+    LD := $(CROSS_COMPILE)ld
+
+    # 驅動源碼文件
+    SRCS := my_driver_1.c my_driver_2.c
+    OBJS := $(SRCS:.c=.o)
+
+    # 目標文件
+    TARGET := my_driver.ko
+
+    # 默認目標
+    all: $(TARGET)
+
+    $(TARGET): $(OBJS)
+        $(LD) -r -o $@ $(OBJS)
+
+    %.o: %.c
+        $(CC) -c -o $@ $< -I $(KDIR)/include -I $(KDIR)/arch/$(ARCH)/include
+
+    # 清除編譯產生的文件
+    clean:
+        rm -f $(OBJS) $(TARGET)
+
+    .PHONY: all clean
+    ```
+
+**2. 使用內核構建系統自動構建內核模塊：**
+
+- 使用內核構建系統（Kbuild）自動編譯和鏈接源文件，生成內核模塊（.ko）。
+
+    ```makefile
+    # Makefile 使用內核構建系統自動構建內核模塊
+
+    KDIR := /path/to/kernel/source
+    ARCH := arm
+    CROSS_COMPILE := arm-linux-gnueabi-
+
+    # 指定目標文件名稱，這裡的目標是 my_driver.ko
+    obj-m := my_driver.o
+
+    # 指定驅動源碼文件
+    my_driver-objs := my_driver_1.o my_driver_2.o
+
+    # 默認目標
+    all:
+        $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR) M=$(PWD) modules
+
+    # 清除編譯產生的文件
+    clean:
+        $(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR) M=$(PWD) clean
+
+    .PHONY: all clean
+    ```
+
+在兩個示例中，第二個示例更適合大多數情況，因為它利用內核構建系統（Kbuild）自動處理很多細節。第一個示例可能需要根據特定的情況和需求進行調整。然而，在某些特殊情況下，例如在調試過程中，需要對編譯過程進行更細粒度的控制，手動編譯可能會更有用。
+
+總結一下，手動編譯每個源文件並將它們鏈接到一個內核模塊的方法可能會比較繁瑣，並且需要更多的手動配置和調整。而使用內核構建系統自動構建內核模塊的方法更為簡單和高效，適用於大多數情況。在實際開發過程中，建議使用內核構建系統（Kbuild）自動構建內核模塊，以節省時間和避免不必要的錯誤。
+
 
 <h1 id="1">筆記</h1>
 
