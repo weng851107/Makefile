@@ -7,7 +7,9 @@ If there is related infringement or violation of related regulations, please con
 
 # 目錄
 
-- [Note](#0)
+- [重點整理](#0)
+  - [ARCH 和 CROSS_COMPILE 變數](#0.1)
+  - [常用於存放庫路徑、庫和包含路徑的變數名稱](#0.2)
 - [筆記](#1)
   - [關於gcc、make和CMake的區別](#1.0)
   - [Makefile要達成的效果](#1.1)
@@ -38,6 +40,245 @@ If there is related infringement or violation of related regulations, please con
     - [Types of Prerequisites](#2.2.2)
     - [Using Wildcard Characters in File Names](#2.2.3)
 
+<h1 id="0">重點整理</h1>
+
+<h2 id="0.1">ARCH 和 CROSS_COMPILE 變數</h2>
+
+這兩個變數允許您更靈活地配置編譯過程，以便在不同的硬體平台上編譯程式：
+
+- `ARCH` 變數 -> 指定目標平台的體系結構
+  - `arm`: ARM 結構
+  - `arm64`: ARM 64 位結構
+  - `x86`: x86 32 位結構
+  - `x86_64`: x86 64 位結構
+  - `mips`: MIPS 結構
+  - `powerpc`: PowerPC 結構
+  - `s390`: IBM S/390 結構
+- `CROSS_COMPILE` 變數 -> 要使用的交叉編譯器前綴，它會與工具鏈中的各個工具（如 gcc、ld、ar 等）組合使用
+  - `arm-linux-gnueabihf-`：用於 ARM 結構的 GNU/Linux 系統。
+  - `arm-none-eabi-`：用於 ARM 結構的嵌入式系統，如 STM32。
+  - `mips-linux-gnu-`：用於 MIPS 結構的 GNU/Linux 系統。
+  - `powerpc-linux-gnu`-：用於 PowerPC 結構的 GNU/Linux 系統。
+  - `x86_64-w64-mingw32-`：用於 Windows 64 位系統的 GNU 編譯器（MinGW-w64）。
+
+  ```makefile
+  # Target architecture
+  ARCH ?= x86_64
+
+  # Cross-compiler prefix
+  CROSS_COMPILE ?= 
+
+  # Compiler
+  CC := $(CROSS_COMPILE)gcc
+
+  # ...........................
+
+  ifeq ($(ARCH), arm)
+      # Use ARM specific compiler flags and libraries
+      CFLAGS += -march=armv8-a
+      LDFLAGS += -L./lib/arm
+      LIBS += -larm_lib
+  else ifeq ($(ARCH), x86_64)
+      # Use x86_64 specific compiler flags and libraries
+      CFLAGS += -march=x86-64
+      LDFLAGS += -L./lib/x86_64
+      LIBS += -lx86_64_lib
+  endif
+
+  # ...........................
+  ```
+
+一個使用 `ARCH` 和 `CROSS_COMPILE` 變數的 Makefile 範例：
+
+- 使用 `?=` 賦值運算符來設置 `ARCH` 和 `CROSS_COMPILE` 變數。這意味著，如果這些變數在命令行或環境中已經設置，則它們將保持不變；否則，它們將使用指定的默認值。
+
+    ```makefile
+    # Target architecture
+    ARCH ?= arm
+
+    # Cross-compiler prefix
+    CROSS_COMPILE ?= arm-linux-gnueabi-
+
+    # Compiler
+    CC := $(CROSS_COMPILE)gcc
+
+    # Other variables and targets follow...
+    ```
+
+- 使用這種方法，您可以在命令行中指定目標體系結構和交叉編譯器前綴，例如：
+
+    ```bash
+    make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi-
+    ```
+
+    如果您不指定這些變數，則 Makefile 將使用預設值。
+
+<h2 id="0.2">常用於存放庫路徑、庫和包含路徑的變數名稱</h2>
+
+1. `LIB_DIRS` 或 `LIB_PATH`：用於存放庫目錄的路徑。這些路徑將使用 `-L` 選項傳遞給連結器。例如：
+
+    ```makefile
+    LIB_DIRS := -L./lib1 -L./lib2
+    ```
+
+2. `LIBS` 或 `LD_LIBS`：用於存放需要連結的庫名稱。這些庫將使用 `-l` 選項傳遞給連結器。例如：
+
+    ```makefile
+    LIBS := -lmylib1 -lmylib2
+    ```
+
+3. `INCLUDE_DIRS` 或 `INC_DIRS`：用於存放包含目錄（頭檔案路徑）。這些路徑將使用 `-I` 選項傳遞給編譯器。例如：
+
+    ```makefile
+    INCLUDE_DIRS := -I./include1 -I./include2
+    ```
+
+在Makefile中，可以將這些變數組合到 CFLAGS 和 LDFLAGS 中，例如：
+
+```makefile
+CFLAGS := -Wall -Wextra $(INCLUDE_DIRS)
+LDFLAGS := $(LIB_DIRS) $(LIBS)
+```
+
+這樣可以讓Makefile變得更加組織化和易於維護。
+
+<h2 id="0.3">自動化變數($<, $^, $@, ...)</h2>
+
+`$<`：代表第一個依賴檔案的名稱。
+
+- 例如，當編譯一個目標檔案時，`$<` 代表的是這個目標檔案的第一個依賴檔案，通常是一個源檔案。
+
+`$^`：代表所有依賴檔案的清單，以空格分隔。
+
+- 當使用多個依賴檔案編譯目標時，可以使用 `$^` 變數，例如：
+
+    ```makefile
+    $(TARGET): $(OBJS)
+        $(CC) $(CFLAGS) $^ -o $@
+    ```
+
+- 代表所有依賴檔案的清單，即 `$(OBJS)` 變數
+
+`$@`：代表目標檔案的名稱。
+
+- 當編譯多個檔案時，可以使用 $@ 變數來代表目標檔案名稱，例如：
+
+    ```makefile
+    $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+        $(CC) $(CFLAGS) -c $< -o $@
+    ```
+
+- 代表目標檔案的名稱，即 `$(TARGET)` 變數
+
+
+可以在makefile中撰寫 `.PHONY` 來印出相關的自動化變數
+
+```makefile
+# Print variables
+.PHONY: vars
+vars:
+    @echo "CC = $(CC)"
+    @echo "CFLAGS = $(CFLAGS)"
+    @echo "SRCS = $(SRCS)"
+    @echo "OBJS = $(OBJS)"
+    @echo "TARGET = $(TARGET)"
+```
+
+- 透過 `make vars` 來顯示出所有自動化變數的值，方便你調試和測試 Makefile
+
+<h2 id="0.4">C語言編譯source code產生執行檔範例</h2>
+
+專案結構如下：
+
+```css
+project/
+├── Makefile
+├── include/
+│   └── example.h
+├── lib/
+│   └── libexample.so
+├── src/
+│   ├── main.c
+│   └── example.c
+└── bin/
+```
+
+Makefile 的內容如下：
+
+```makefile
+# Target architecture
+ARCH ?= arm
+
+# Cross-compiler prefix
+CROSS_COMPILE ?= arm-linux-gnueabi-
+
+# Compiler
+CC := $(CROSS_COMPILE)gcc
+
+# Include directories
+INCLUDE_DIRS := -I./include1 \
+                -I./include2
+
+# Library directories
+LIB_DIRS := -L./lib1 \
+            -L./lib2
+
+# Libraries
+LIBS := -lmylib1 \
+        -lmylib2
+
+# Compiler flags
+CFLAGS := -Wall -Wextra
+CFLAGS += $(INCLUDE_DIRS)
+
+# Linker flags
+LDFLAGS := $(LIB_DIRS)
+LDFLAGS += $(LIBS)
+
+# Source and object files
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
+
+# Output binary
+TARGET := $(BIN_DIR)/example
+
+# Source and object files
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
+
+# Main target
+.PHONY: all
+all: $(TARGET)
+
+# Link object files to create binary
+$(TARGET): $(OBJS)
+    mkdir -p $(BIN_DIR)
+    $(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
+
+# Compile source files to object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+    mkdir -p $(OBJ_DIR)
+    $(CC) $(CFLAGS) -c $< -o $@
+
+# Clean target
+.PHONY: clean
+clean:
+    rm -rf $(OBJ_DIR) $(BIN_DIR)
+
+# Run target
+.PHONY: run
+run: $(TARGET)
+    LD_LIBRARY_PATH=./lib1:./lib2 ./$(TARGET)
+```
+
+在這個 Makefile 中，ARCH 和 CROSS_COMPILE 變數分別用於指定目標平台的體系結構和交叉編譯器前綴。您可以在命令行中指定這些變數，如下所示：
+
+```bash
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi-
+```
+
+如果您不指定這些變數，則 Makefile 將使用預設值。
 
 <h1 id="1">筆記</h1>
 
